@@ -35,8 +35,6 @@ type Config struct {
 
 const (
 	cmdAllowed = "stats|stats_reset|reset|tail"
-	PROGNAME   = "mlogtail"
-	VERSION    = "1.1.2"
 )
 
 func main() {
@@ -49,7 +47,7 @@ func main() {
 			tailLog(cfg)
 		default:
 			if !strings.Contains(cfg.setFlags, "f") {
-				tailingProcessStats(cfg)
+				getCurrentStats(cfg)
 			}
 		}
 	}
@@ -126,6 +124,26 @@ func createListener(cfg *Config) net.Listener {
 		}
 	}
 	return res
+}
+
+func getCurrentStats(cfg *Config) {
+	conn, err := net.Dial(cfg.lnNetworkType, cfg.lnAddress)
+	if err != nil {
+		fmt.Printf("Cannot connect to log reader process: %s\n", err)
+		return
+	}
+
+	var cmd string
+	if len(cfg.subCmd) > 0 {
+		cmd = cfg.subCmd
+	} else {
+		cmd = cfg.cmd
+	}
+	buf := make([]byte, 384)
+	conn.Write([]byte(cmd))
+	cnt, _ := conn.Read(buf)
+	fmt.Printf("%s", string(buf[:cnt]))
+	conn.Close()
 }
 
 func handleSIGINTKILL(ln net.Listener, cfg *Config) {
@@ -278,26 +296,6 @@ func tailLog(cfg *Config) {
 			PostfuxLineParse(line.Text)
 		}
 	}
-}
-
-func tailingProcessStats(cfg *Config) {
-	conn, err := net.Dial(cfg.lnNetworkType, cfg.lnAddress)
-	if err != nil {
-		fmt.Printf("Cannot connect to log reader process: %s\n", err)
-		return
-	}
-
-	var cmd string
-	if len(cfg.subCmd) > 0 {
-		cmd = cfg.subCmd
-	} else {
-		cmd = cfg.cmd
-	}
-	buf := make([]byte, 384)
-	conn.Write([]byte(cmd))
-	cnt, _ := conn.Read(buf)
-	fmt.Printf("%s", string(buf[:cnt]))
-	conn.Close()
 }
 
 func usage() {

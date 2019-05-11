@@ -27,7 +27,7 @@ const (
 	BouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
 	RejectLine      = `/(?:smtpd|cleanup)\[\d+\]: .*?\breject: `
 	HoldLine        = ` NOQUEUE: hold: `
-	DiscardLine     = `: NOQUEUE: discard: `
+	DiscardLine     = ` NOQUEUE: discard: `
 )
 
 var (
@@ -59,7 +59,7 @@ func PostfixCmgHandle(ln net.Listener) {
 		if err != nil {
 			fmt.Printf("Cannot accept a connection: %s\n", err)
 		} else {
-			go postfixCmdProcess(conn)
+			go postfixProcessCmd(conn)
 		}
 	}
 }
@@ -75,14 +75,15 @@ func PostfuxLineParse(s string) {
 		sz, err := strconv.Atoi(sMatch[2])
 		if err != nil {
 			fmt.Printf("Cannot convert to a number: %s\n", err)
+		} else {
+			msgStatusCounters.lock()
+			msgStatusCounters.bytesDlvMap[sMatch[1]] = uint64(sz)
+			if msgStatusCounters.bytesRcvMap[sMatch[1]] {
+				msgStatusCounters.counters["bytes-received"] += uint64(sz)
+				delete(msgStatusCounters.bytesRcvMap, sMatch[1])
+			}
+			msgStatusCounters.unlock()
 		}
-		msgStatusCounters.lock()
-		msgStatusCounters.bytesDlvMap[sMatch[1]] = uint64(sz)
-		if msgStatusCounters.bytesRcvMap[sMatch[1]] {
-			msgStatusCounters.counters["bytes-received"] += uint64(sz)
-			delete(msgStatusCounters.bytesRcvMap, sMatch[1])
-		}
-		msgStatusCounters.unlock()
 	} else if sMatch := reQueueRemoveLine.FindStringSubmatch(s); sMatch != nil { // removed
 		msgStatusCounters.lock()
 		delete(msgStatusCounters.bytesDlvMap, sMatch[1])
@@ -112,6 +113,7 @@ func PostfuxLineParse(s string) {
 	}
 }
 
+// PostfixParserInit should be called once at the beginning of work
 func PostfixParserInit(cfg *Config) {
 	msgStatusCounters.reset()
 	if cfg.cmd == "tail" {
@@ -134,7 +136,7 @@ func (c *MsgStatusCountersType) lock() {
 }
 
 func (c *MsgStatusCountersType) reset() {
-	c.counters = make(map[string]uint64, 8)
+	c.counters = make(map[string]uint64, 10)
 	c.bytesRcvMap = make(map[string]bool)
 	c.bytesDlvMap = make(map[string]uint64)
 }
@@ -154,7 +156,7 @@ func (c *MsgStatusCountersType) unlock() {
 	}
 }
 
-func postfixCmdProcess(conn net.Conn) {
+func postfixProcessCmd(conn net.Conn) {
 	buf := make([]byte, 32)
 	cnt, err := conn.Read(buf)
 	if err != nil {
