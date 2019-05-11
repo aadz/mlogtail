@@ -1,0 +1,311 @@
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"os/signal"
+	"os/user"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+	"syscall"
+
+	"github.com/hpcloud/tail"
+	"golang.org/x/sys/unix"
+)
+
+//type Config map[string]string
+type Config struct {
+	cmd           string
+	subCmd        string
+	setFlags      string
+	listen        string
+	lnNetworkType string
+	lnAddress     string
+	maillog       string
+	maillog_type  string
+	socket_owner  string
+	socket_mode   int
+}
+
+const (
+	cmdAllowed = "stats|stats_reset|reset|tail"
+	PROGNAME   = "mlogtail"
+	VERSION    = "1.1.2"
+)
+
+func main() {
+	cfg := new(Config)
+	readCmdLine(cfg)
+
+	if len(cfg.cmd) > 0 {
+		switch cfg.cmd {
+		case "tail": // start to tail of the log
+			tailLog(cfg)
+		default:
+			if !strings.Contains(cfg.setFlags, "f") {
+				tailingProcessStats(cfg)
+			}
+		}
+	}
+
+	if strings.Contains(cfg.setFlags, "f") {
+		var err error
+		var logFile *os.File
+		if cfg.maillog == "-" {
+			logFile = os.Stdin
+		} else {
+			logFile, err = os.Open(cfg.maillog)
+			if err != nil {
+				fmt.Printf("Canot open logfile: %s\n", err)
+				os.Exit(1)
+			}
+		}
+
+		PostfixParserInit(cfg)
+		buf := bufio.NewReaderSize(logFile, 64*1024)
+		var line string
+		for {
+			line, err = buf.ReadString('\n')
+			if err != nil {
+				break
+			} else if IsPostfixLine(line) {
+				PostfuxLineParse(line)
+			}
+		}
+		if err != io.EOF {
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			fmt.Print(PostfixStats())
+		}
+		logFile.Close()
+	}
+}
+
+func closeListener(ln net.Listener, cfg *Config) {
+	if cfg.lnNetworkType == "unix" {
+		fmt.Printf("Removing socket file %s\n", cfg.lnAddress)
+		err := unix.Unlink(cfg.lnAddress)
+		if err != nil {
+			fmt.Printf("Cannot delete socket file %s: %s\n", cfg.lnAddress, err)
+		}
+	}
+}
+
+func createListener(cfg *Config) net.Listener {
+	res, err := net.Listen(cfg.lnNetworkType, cfg.lnAddress)
+	if err != nil {
+		fmt.Printf("Cannot open %s: %s\n", cfg.listen, err)
+		os.Exit(1)
+	}
+
+	if cfg.lnNetworkType == "unix" {
+		// Set socket access permissions
+		mode, _ := strconv.ParseInt(fmt.Sprintf("0%d", cfg.socket_mode), 0, 64)
+		err := unix.Chmod(cfg.lnAddress, uint32(mode))
+		if err != nil {
+			fmt.Printf("Cannot chmod: %s\n", err)
+		}
+
+		// Set socket owner and group if we are root
+		if len(cfg.socket_owner) > 0 {
+			if os.Geteuid() == 0 {
+				err = setFileOwner(cfg.lnAddress, cfg.socket_owner)
+				if err != nil {
+					fmt.Printf("Cannot set socket owner: %s", err)
+				}
+			} else {
+				fmt.Printf("You need to be a superuser (root) to set the socket owner\n")
+			}
+		}
+	}
+	return res
+}
+
+func handleSIGINTKILL(ln net.Listener, cfg *Config) {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	<-sig
+	fmt.Printf("\nReceived termination signal\n")
+	closeListener(ln, cfg)
+
+	os.Exit(0)
+}
+
+func readCmdLine(cfg *Config) {
+	var listen, maillog, maillog_type, socket_owner string
+	var socket_mode int
+
+	flag.StringVar(&maillog, "f", "/var/log/mail.log", "Mail log file path, if path is \"-\" then read from STDIN")
+	flag.Bool("h", false, "Show this help")
+	flag.StringVar(&listen, "l", "unix:/var/run/mlogtail.sock", "Log reader process is listening for commands on a socket file, or IPv4:PORT,\nor [IPv6]:PORT")
+	flag.StringVar(&socket_owner, "o", "", "Set a socket OWNER[:GROUP] while listening on a socket file")
+	flag.IntVar(&socket_mode, "p", 666, "Set a socket access permissions while listening on a socket file")
+	flag.StringVar(&maillog_type, "t", "postfix", "Mail log type. It is \"postfix\" only allowed for now")
+	flag.Bool("v", false, "Show version information and exit")
+	flag.Parse()
+
+	// create a list of explicitly set flags
+	fsetFunc := func(f *flag.Flag) {
+		cfg.setFlags += f.Name
+	}
+	flag.Visit(fsetFunc)
+	if len(os.Args) == 1 || strings.Contains(cfg.setFlags, "h") {
+		usage()
+	}
+	if strings.Contains(cfg.setFlags, "v") {
+		fmt.Printf("%s v. %s, %s\n", PROGNAME, VERSION, runtime.Version())
+		os.Exit(0)
+	}
+
+	cfg.listen = listen
+	cfg.maillog = maillog
+	cfg.maillog_type = maillog_type
+	cfg.socket_owner = socket_owner
+
+	// get not options parameter (command)
+	if flag.NArg() > 0 {
+		cmds := flag.Args()
+		if strings.Contains(cmdAllowed, cmds[0]) {
+			cfg.cmd = cmds[0]
+		} else if maillog_type == "postfix" && strArrayLookup(PostfixStatusArr[:], cmds[0]) {
+			cfg.cmd = "stats"
+			cfg.subCmd = cmds[0]
+		} else {
+			fmt.Printf("Command can be one of \"%s\"\n", cmdAllowed+"|"+strings.Join(PostfixStatusArr[:], "|"))
+			os.Exit(1)
+		}
+	}
+
+	// some configuratioin of tailing process
+	if cfg.cmd == "tail" {
+		if socket_mode <= 777 {
+			cfg.socket_mode = socket_mode
+		} else {
+			fmt.Printf("File mode cannot be greater than 777, it is set to 666\n")
+			cfg.socket_mode = 666
+		}
+	}
+
+	if listen[:5] == "unix:" {
+		cfg.lnNetworkType = "unix"
+		cfg.lnAddress = listen[5:]
+	} else {
+		cfg.lnNetworkType = "tcp"
+		cfg.lnAddress = listen
+	}
+}
+
+// setFileOwner gets file name and OWNER[:GROUP] as owner,
+// converts OWNER:GROUP to numeric IDs if required and
+// apply it to the file
+func setFileOwner(fpath, owner string) error {
+	ugAr := strings.Split(owner, ":")
+	if len(ugAr) > 2 {
+		return fmt.Errorf("Incorrect owner %s", owner)
+	}
+
+	var uid, gid int
+	numRe := regexp.MustCompile(`^\d+$`)
+
+	if numRe.MatchString(ugAr[0]) { // Get UID
+		uid, _ = strconv.Atoi(ugAr[0])
+	} else {
+		if u, err := user.Lookup(ugAr[0]); err == nil {
+			uid, _ = strconv.Atoi(u.Uid)
+		} else {
+			return err
+		}
+	}
+
+	if len(ugAr) == 2 {
+		if numRe.MatchString(ugAr[1]) { // Get GID
+			gid, _ = strconv.Atoi(ugAr[1])
+		} else {
+			if g, err := user.LookupGroup(ugAr[1]); err == nil {
+				gid, _ = strconv.Atoi(g.Gid)
+			} else {
+				return err
+			}
+		}
+	} else {
+		gid = -1 // do not change GID
+	}
+
+	// Set OWNER:GROUP
+	return os.Chown(fpath, uid, gid)
+}
+
+func strArrayLookup(a []string, s string) bool {
+	for _, v := range a {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+func tailLog(cfg *Config) {
+	ln := createListener(cfg)
+	defer closeListener(ln, cfg)
+	go handleSIGINTKILL(ln, cfg)
+	go PostfixCmgHandle(ln)
+
+	tailCfg := tail.Config{
+		Location: &tail.SeekInfo{0, 2},
+		ReOpen:   true,
+		Follow:   true,
+		Logger:   tail.DiscardingLogger,
+	}
+	t, err := tail.TailFile(cfg.maillog, tailCfg)
+	if err != nil {
+		fmt.Errorf("Cannot tail mail log file: %v\n", err)
+		closeListener(ln, cfg)
+		os.Exit(1)
+	}
+
+	PostfixParserInit(cfg)
+
+	for line := range t.Lines {
+		if IsPostfixLine(line.Text) {
+			//fmt.Println(line.Text)
+			PostfuxLineParse(line.Text)
+		}
+	}
+}
+
+func tailingProcessStats(cfg *Config) {
+	conn, err := net.Dial(cfg.lnNetworkType, cfg.lnAddress)
+	if err != nil {
+		fmt.Printf("Cannot connect to log reader process: %s\n", err)
+		return
+	}
+
+	var cmd string
+	if len(cfg.subCmd) > 0 {
+		cmd = cfg.subCmd
+	} else {
+		cmd = cfg.cmd
+	}
+	buf := make([]byte, 384)
+	conn.Write([]byte(cmd))
+	cnt, _ := conn.Read(buf)
+	fmt.Printf("%s", string(buf[:cnt]))
+	conn.Close()
+}
+
+func usage() {
+	pname := os.Args[0]
+	fmt.Printf("Usage:\n\n  %s [OPTIONS] tail\n", pname)
+	fmt.Printf("  %s [OPTIONS] \"stats | stats_reset | reset\"\n", pname)
+	fmt.Printf("  %s [OPTIONS] <COUNTER_NAME>\n", pname)
+	fmt.Printf("  %s -f <LOG_FILE_NAME>\n\nOptions:\n", pname)
+	flag.PrintDefaults()
+	os.Exit(0)
+}

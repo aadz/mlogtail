@@ -1,0 +1,15 @@
+# /usr/lib/systemd/system/mlogtail.service
+# /etc/systemd/system/mlogtail.service
+
+[Unit]
+Description=mlogtail log reader process
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/tmp
+ExecStart=/usr/local/sbin/mlogtail -f /var/log/maillog -o root:zabbix -p 660 tail
+
+[Install]
+WantedBy=multi-user.target
