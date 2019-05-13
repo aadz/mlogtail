@@ -26,8 +26,8 @@ const (
 	DeferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
 	BouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
 	RejectLine      = `/(?:smtpd|cleanup)\[\d+\]: .*?\breject: `
-	HoldLine        = ` NOQUEUE: hold: `
-	DiscardLine     = ` NOQUEUE: discard: `
+	HoldLine        = `: NOQUEUE: hold: `
+	DiscardLine     = `: NOQUEUE: discard: `
 )
 
 var (
@@ -116,7 +116,7 @@ func PostfuxLineParse(s string) {
 // PostfixParserInit should be called once at the beginning of work
 func PostfixParserInit(cfg *Config) {
 	msgStatusCounters.reset()
-	if cfg.cmd == "tail" {
+	if cfg.cmd != "fail" {
 		needMx = true
 		msgStatusCounters.mutex = new(sync.Mutex)
 	}
@@ -129,7 +129,7 @@ func PostfixStats() string {
 }
 
 func (c *MsgStatusCountersType) lock() {
-	// we do not perform locking here if we are reading file
+	// we do not perform locking here if we are just reading a disk file
 	if needMx {
 		c.mutex.Lock()
 	}
@@ -150,7 +150,7 @@ func (c *MsgStatusCountersType) String() string {
 }
 
 func (c *MsgStatusCountersType) unlock() {
-	// we do not perform locking if we are reading file
+	// we do not perform locking if we are just reading a disk file
 	if needMx {
 		c.mutex.Unlock()
 	}

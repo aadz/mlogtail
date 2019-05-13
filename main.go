@@ -65,6 +65,7 @@ func main() {
 			}
 		}
 
+		cfg.cmd = "file" // we are working with a disk saved file of STDIN
 		PostfixParserInit(cfg)
 		buf := bufio.NewReaderSize(logFile, 64*1024)
 		var line string
@@ -283,7 +284,7 @@ func tailLog(cfg *Config) {
 	}
 	t, err := tail.TailFile(cfg.maillog, tailCfg)
 	if err != nil {
-		fmt.Errorf("Cannot tail mail log file: %v\n", err)
+		fmt.Printf("Cannot tail mail log file: %v\n", err)
 		closeListener(ln, cfg)
 		os.Exit(1)
 	}
