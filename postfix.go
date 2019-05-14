@@ -116,7 +116,7 @@ func PostfuxLineParse(s string) {
 // PostfixParserInit should be called once at the beginning of work
 func PostfixParserInit(cfg *Config) {
 	msgStatusCounters.reset()
-	if cfg.cmd != "fail" {
+	if cfg.cmd == "tail" {
 		needMx = true
 		msgStatusCounters.mutex = new(sync.Mutex)
 	}
