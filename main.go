@@ -73,7 +73,7 @@ func main() {
 			line, err = buf.ReadString('\n')
 			if err != nil {
 				break
-			} else if IsPostfixLine(line) {
+			} else {
 				PostfuxLineParse(line)
 			}
 		}
@@ -292,10 +292,7 @@ func tailLog(cfg *Config) {
 	PostfixParserInit(cfg)
 
 	for line := range t.Lines {
-		if IsPostfixLine(line.Text) {
-			//fmt.Println(line.Text)
-			PostfuxLineParse(line.Text)
-		}
+		PostfuxLineParse(line.Text)
 	}
 }
 

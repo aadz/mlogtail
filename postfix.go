@@ -17,15 +17,15 @@ type MsgStatusCountersType struct {
 }
 
 const (
-	PostfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix/[a-z]+\[\d+\]: `
-	ReceivedLine    = `/(?:(?:smtpd|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=)`
-	QueueActiveLine = `/qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
-	QueueRemoveLine = `/(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
+	PostfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix/`
+	ReceivedLine    = `^(?:(?:smtpd|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=)`
+	QueueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
+	QueueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
 	DeliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
 	ForwardedLine   = `forwarded as `
 	DeferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
 	BouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
-	RejectLine      = `/(?:smtpd|cleanup)\[\d+\]: .*?\breject: `
+	RejectLine      = `^(?:smtpd|cleanup)\[\d+\]: .*?\breject: `
 	HoldLine        = `: NOQUEUE: hold: `
 	DiscardLine     = `: NOQUEUE: discard: `
 )
@@ -49,9 +49,9 @@ var (
 	msgStatusCounters MsgStatusCountersType
 )
 
-func IsPostfixLine(s string) bool {
-	return rePostfixLogLine.MatchString(s)
-}
+//func IsPostfixLine(s string) bool {
+//	return rePostfixLogLine.MatchString(s)
+//}
 
 func PostfixCmgHandle(ln net.Listener) {
 	for {
@@ -65,13 +65,21 @@ func PostfixCmgHandle(ln net.Listener) {
 }
 
 func PostfuxLineParse(s string) {
+	// check if it is postfix line and get log prefix length
+	var logPrefixLen int
+	if sMatch := rePostfixLogLine.FindStringSubmatch(s); sMatch != nil {
+		logPrefixLen = len(sMatch[0])
+	} else {
+		return
+	}
+
 	var statusKey string
-	if sMatch := reReceivedLine.FindStringSubmatch(s); sMatch != nil { // received
+	if sMatch := reReceivedLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // received
 		statusKey = "received"
 		msgStatusCounters.lock()
 		msgStatusCounters.bytesRcvMap[sMatch[1]] = true
 		msgStatusCounters.unlock()
-	} else if sMatch := reQueueActiveLine.FindStringSubmatch(s); sMatch != nil { // queue active
+	} else if sMatch := reQueueActiveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // queue active
 		sz, err := strconv.Atoi(sMatch[2])
 		if err != nil {
 			fmt.Printf("Cannot convert to a number: %s\n", err)
@@ -84,26 +92,26 @@ func PostfuxLineParse(s string) {
 			}
 			msgStatusCounters.unlock()
 		}
-	} else if sMatch := reQueueRemoveLine.FindStringSubmatch(s); sMatch != nil { // removed
+	} else if sMatch := reQueueRemoveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // removed
 		msgStatusCounters.lock()
 		delete(msgStatusCounters.bytesDlvMap, sMatch[1])
 		msgStatusCounters.unlock()
-	} else if reForwardedLine.MatchString(s) { // forwarded
+	} else if reForwardedLine.MatchString(s[logPrefixLen:]) { // forwarded
 		statusKey = "forwarded"
-	} else if sMatch := reDeliveredLine.FindStringSubmatch(s); sMatch != nil { // sent
+	} else if sMatch := reDeliveredLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // sent
 		statusKey = "delivered"
 		msgStatusCounters.lock()
 		msgStatusCounters.counters["bytes-delivered"] += msgStatusCounters.bytesDlvMap[sMatch[1]]
 		msgStatusCounters.unlock()
-	} else if reRejectLine.MatchString(s) { // rejected
+	} else if reRejectLine.MatchString(s[logPrefixLen:]) { // rejected
 		statusKey = "rejected"
-	} else if reDeferredLine.MatchString(s) { // deffered
+	} else if reDeferredLine.MatchString(s[logPrefixLen:]) { // deffered
 		statusKey = "deferred"
-	} else if reBouncedLine.MatchString(s) { // bounced
+	} else if reBouncedLine.MatchString(s[logPrefixLen:]) { // bounced
 		statusKey = "bounced"
-	} else if reHoldLine.MatchString(s) { // held
+	} else if reHoldLine.MatchString(s[logPrefixLen:]) { // held
 		statusKey = "held"
-	} else if reDiscardLine.MatchString(s) { // discarded
+	} else if reDiscardLine.MatchString(s[logPrefixLen:]) { // discarded
 		statusKey = "discarded"
 	}
 	if len(statusKey) != 0 {
