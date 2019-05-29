@@ -84,7 +84,7 @@ or STDIN:
 ```none
 # grep '^Apr  1' /var/log/mail.log | mlogtail -f -
 ```
-for example, to get counter for some defined date.
+for example, to get counters for some defined date.
 
 ## Installation
 
