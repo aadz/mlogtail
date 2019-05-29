@@ -1,5 +1,5 @@
 # About mlogtail
-The main purpose of the program is monitoring of mail service (MTA) by reading new data appearing in log file and counting the values of some parameters characterizing the operation of a mail server. Currently only Postfix logs are supported.
+The main purpose of the program is monitoring of mail service (MTA) by reading new data appearing in log file and counting the values of some parameters characterizing operation of a mail server. Currently only Postfix logs are supported.
 
 The program has two main usage modes. In the first case (`tail` command), the program reads new data from the log file in background and maintains several counters.
 
