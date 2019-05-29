@@ -3,7 +3,7 @@ The main purpose of the program is monitoring of mail service (MTA) by reading n
 
 The program has two main usage modes. In the first case (`tail` command), the program reads new data from the log file in background and maintains several counters.
 
-`mlogtail` monitors state of the log file it woking with, so there is no need to do anything at time of normal logs rotating.
+`mlogtail` monitors state of the log file it woking with, so there is no needs to do anything at time of normal logs rotating.
 
 In the second mode, `mlogtail` is used to call to a log reading process and get (and/or reset) current values of the counters.
 
