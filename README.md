@@ -20,7 +20,7 @@ Usage:
 
 Options:
   -f string
-        Mail log file path, if path is "-" then read from STDIN (default "/var/log/mail.log")
+        Mail log file path, if the path is "-" then read from STDIN (default "/var/log/mail.log")
   -h    Show this help
   -l string
         Log reader process is listening for commands on a socket file, or IPv4:PORT,
