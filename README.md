@@ -1,9 +1,9 @@
 # About mlogtail
 The main purpose of the program is monitoring of the mail service (MTA) by reading new data appearing in the log file and counting the values of some parameters characterizing the operation of the mail server. Currently only Postfix logs are supported.
 
-The program has two main usage modes. In the first case (`tail` command), the program reads new data from the log file in background and maintains several counters. `mlogtail` monitors state of the log file it works it woking with, so there is no need to do anything at logs rotating time.
+The program has two main usage modes. In the first case (`tail` command), the program reads new data from the log file in background and maintains several counters. `mlogtail` monitors state of the log file it woking with, so there is no need to do anything at normal logs rotating time.
 
-In the second mode, mlogtail is used to call in a process that reads the log and to receive (and/or reset) the current values of the counters.
+In the second mode, mlogtail is used to call at a process that reads the log and to receive (and/or reset) the current values of counters.
 
 ## Usage
 
@@ -40,7 +40,7 @@ Unfortunately, in Go, the process has no good ways to become a demon, so we laun
 # mlogtail tail &
 ```
 
-или при помощи systemctl. Если процесс, читающий лог, должен слушать сокет, то указание типа `unix` обязательно, например `unix:/tmp/some.sock`.
+or by systemctl. If a log reading process have to listen to a socket then it is required to specify a netwoirking type. For example: `unix:/tmp/some.sock`.
 
 ### Getting counter values
 
