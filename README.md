@@ -36,7 +36,7 @@ Options:
 
 ### Log tailing mode
 
-Unfortunately, in Go, the process has no good ways to become a demon, so we launch the "reader" just in the background:
+Unfortunately, in Go, the process has no good ways to become a demon, so we launch the "reader" just in background:
 
 ```none
 # mlogtail tail &
