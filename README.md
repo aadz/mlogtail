@@ -44,7 +44,7 @@ Unfortunately, in Go, the process has no good ways to become a demon, so we laun
 
 or by `systemctl`. If a log reading process have to listen to a socket then it is required to specify a netwoirking type. For example: `unix:/tmp/some.sock`.
 
-### Counters values
+### Counters' values
 
 ```none
 # mlogtail stats
