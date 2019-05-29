@@ -75,7 +75,7 @@ Probably a more frequent case of addressing the counters is to get the current v
 
 ### Log file statistics
 
-In addition to working in real time, mlogtail can be used with the log file:
+In addition to working in real time, mlogtail can be used with a mail log file:
 
 ```none
 # mlogtail -f /var/log/mail.log
