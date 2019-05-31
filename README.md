@@ -12,7 +12,6 @@ In the second mode, `mlogtail` is used to call to a log reading process and get 
 ```none
 # mlogtail -h
 Usage:
-
   mlogtail [OPTIONS] tail
   mlogtail [OPTIONS] "stats | stats_reset | reset"
   mlogtail [OPTIONS] <COUNTER_NAME>

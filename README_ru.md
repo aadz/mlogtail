@@ -13,7 +13,6 @@
 ```none
 # mlogtail -h
 Usage:
-
   mlogtail [OPTIONS] tail
   mlogtail [OPTIONS] "stats | stats_reset | reset"
   mlogtail [OPTIONS] <COUNTER_NAME>

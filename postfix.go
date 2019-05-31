@@ -64,7 +64,7 @@ func PostfixCmgHandle(ln net.Listener) {
 	}
 }
 
-func PostfuxLineParse(s string) {
+func PostfixLineParse(s string) {
 	// check if it is postfix line and get log prefix length
 	var logPrefixLen int
 	if sMatch := rePostfixLogLine.FindStringSubmatch(s); sMatch != nil {

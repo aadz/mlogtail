@@ -74,7 +74,7 @@ func main() {
 			if err != nil {
 				break
 			} else {
-				PostfuxLineParse(line)
+				PostfixLineParse(line)
 			}
 		}
 		if err != io.EOF {
@@ -161,7 +161,7 @@ func readCmdLine(cfg *Config) {
 	var listen, maillog, maillog_type, socket_owner string
 	var socket_mode int
 
-	flag.StringVar(&maillog, "f", "/var/log/mail.log", "Mail log file path, if path is \"-\" then read from STDIN")
+	flag.StringVar(&maillog, "f", "/var/log/mail.log", "Mail log file path, if the path is \"-\" then read from STDIN")
 	flag.Bool("h", false, "Show this help")
 	flag.StringVar(&listen, "l", "unix:/var/run/mlogtail.sock", "Log reader process is listening for commands on a socket file, or IPv4:PORT,\nor [IPv6]:PORT")
 	flag.StringVar(&socket_owner, "o", "", "Set a socket OWNER[:GROUP] while listening on a socket file")
@@ -292,13 +292,13 @@ func tailLog(cfg *Config) {
 	PostfixParserInit(cfg)
 
 	for line := range t.Lines {
-		PostfuxLineParse(line.Text)
+		PostfixLineParse(line.Text)
 	}
 }
 
 func usage() {
 	pname := os.Args[0]
-	fmt.Printf("Usage:\n\n  %s [OPTIONS] tail\n", pname)
+	fmt.Printf("Usage:\n  %s [OPTIONS] tail\n", pname)
 	fmt.Printf("  %s [OPTIONS] \"stats | stats_reset | reset\"\n", pname)
 	fmt.Printf("  %s [OPTIONS] <COUNTER_NAME>\n", pname)
 	fmt.Printf("  %s -f <LOG_FILE_NAME>\n\nOptions:\n", pname)
