@@ -168,7 +168,8 @@ func postfixProcessCmd(conn net.Conn) {
 	buf := make([]byte, 32)
 	cnt, err := conn.Read(buf)
 	if err != nil {
-		// conn.Close()
+		conn.Close()
+		fmt.Println(err)
 		return
 	}
 	cmd := strings.TrimSpace(string(buf[:cnt]))
