@@ -88,8 +88,7 @@ discarded       0
 ## Установка
 
 ```none
-go get -u github.com/hpcloud/tail &&
-  go get golang.org/x/sys/unix &&
+go get -u github.com/hpcloud/tail go get golang.org/x/sys/unix &&
   go build && strip mlogtail &&
   cp mlogtail /usr/local/sbin &&
   chown root:bin /usr/local/sbin/mlogtail &&
