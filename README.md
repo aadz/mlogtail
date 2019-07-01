@@ -88,7 +88,7 @@ for example, to get counters for some defined date.
 ## Installation
 
 ```none
-go get -u github.com/hpcloud/tail golang.org/x/sys/unix $$
+go get -u github.com/hpcloud/tail golang.org/x/sys/unix &&
   go build && strip mlogtail &&
   cp mlogtail /usr/local/sbin &&
   chown root:bin /usr/local/sbin/mlogtail &&
