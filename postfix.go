@@ -26,7 +26,7 @@ const (
 	DeferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
 	BouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
 	RejectLine      = `^(?:smtpd|cleanup)\[\d+\]: .*?\breject: `
-	HoldLine        = `: NOQUEUE: hold: `
+	HoldLine        = `: (?:NOQUEUE: hold: |^postsuper.+ placed on hold)`
 	DiscardLine     = `: NOQUEUE: discard: `
 )
 
