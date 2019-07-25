@@ -18,17 +18,17 @@ type MsgStatusCountersType struct {
 
 const (
 	// We expect that postfix prefix line will be in form:
-	// "Jul 22 19:06:42 hostname postfix(/submission|smtps)?/"
-	PostfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix(?:/s(?:mtps/|ubmission))?/`
-	ReceivedLine    = `^(?:smtpd|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=`
+	// "Jul 22 19:06:42 hostname postfix(/(submission|smtps))?/"
+	PostfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix/`
+	ReceivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtpd|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=`
 	QueueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
 	QueueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
 	DeliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
 	ForwardedLine   = `forwarded as `
 	DeferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
 	BouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
-	RejectLine      = `^(?:smtpd|cleanup)\[\d+\]: .*?\breject: `
-	HoldLine        = `: (?:NOQUEUE: hold: |^postsuper.+ placed on hold)`
+	RejectLine      = `^(?:(?:s(?:mtps/|ubmission)/)?smtpd|cleanup)\[\d+\]: .*?\breject: `
+	HoldLine        = `: NOQUEUE: hold: `
 	DiscardLine     = `: NOQUEUE: discard: `
 )
 
