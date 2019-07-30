@@ -105,16 +105,16 @@ func PostfixLineParse(s string) {
 		msgStatusCounters.lock()
 		msgStatusCounters.counters["bytes-delivered"] += msgStatusCounters.bytesDlvMap[sMatch[1]]
 		msgStatusCounters.unlock()
-	} else if reRejectLine.MatchString(s[logPrefixLen:]) { // rejected
-		statusKey = "rejected"
-	} else if reDeferredLine.MatchString(s[logPrefixLen:]) { // deffered
-		statusKey = "deferred"
 	} else if reBouncedLine.MatchString(s[logPrefixLen:]) { // bounced
 		statusKey = "bounced"
-	} else if reHoldLine.MatchString(s[logPrefixLen:]) { // held
-		statusKey = "held"
+	} else if reDeferredLine.MatchString(s[logPrefixLen:]) { // deffered
+		statusKey = "deferred"
+	} else if reRejectLine.MatchString(s[logPrefixLen:]) { // rejected
+		statusKey = "rejected"
 	} else if reDiscardLine.MatchString(s[logPrefixLen:]) { // discarded
 		statusKey = "discarded"
+	} else if reHoldLine.MatchString(s[logPrefixLen:]) { // held
+		statusKey = "held"
 	}
 	if len(statusKey) != 0 {
 		msgStatusCounters.lock()
