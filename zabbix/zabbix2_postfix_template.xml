@@ -24,7 +24,7 @@
             </applications>
             <items>
                 <item>
-                    <name>Bytes delivered p/m</name>
+                    <name>Bytes delivered</name>
                     <type>0</type>
                     <snmp_community/>
                     <multiplier>1</multiplier>
@@ -36,7 +36,7 @@
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
-                    <units>Bytes</units>
+		    <units>B p/s</sunits>
                     <delta>1</delta>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
@@ -45,7 +45,6 @@
                     <snmpv3_authpassphrase/>
                     <snmpv3_privprotocol>0</snmpv3_privprotocol>
                     <snmpv3_privpassphrase/>
-                    <formula>60</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -67,7 +66,7 @@
                     <logtimefmt/>
                 </item>
                 <item>
-                    <name>Bytes received p/m</name>
+                    <name>Bytes received</name>
                     <type>0</type>
                     <snmp_community/>
                     <multiplier>1</multiplier>
@@ -79,7 +78,7 @@
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
-                    <units>Bytes</units>
+		    <units>B p/s/units>
                     <delta>1</delta>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
@@ -88,7 +87,6 @@
                     <snmpv3_authpassphrase/>
                     <snmpv3_privprotocol>0</snmpv3_privprotocol>
                     <snmpv3_privpassphrase/>
-                    <formula>60</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>

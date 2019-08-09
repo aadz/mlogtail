@@ -157,7 +157,7 @@
                     <master_item/>
                 </item>
                 <item>
-                    <name>Bytes delivered p/m</name>
+                    <name>Bytes delivered</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -168,7 +168,7 @@
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
-                    <units>Bytes</units>
+		    <units>B p/s</units>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
@@ -197,10 +197,6 @@
                         <step>
                             <type>10</type>
                             <params/>
-                        </step>
-                        <step>
-                            <type>1</type>
-                            <params>60</params>
                         </step>
                     </preprocessing>
                     <jmx_endpoint/>
@@ -225,7 +221,7 @@
                     <master_item/>
                 </item>
                 <item>
-                    <name>Bytes received p/m</name>
+                    <name>Bytes received</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
@@ -236,7 +232,7 @@
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
-                    <units>Bytes</units>
+		    <units>B p/s</units>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
@@ -265,10 +261,6 @@
                         <step>
                             <type>10</type>
                             <params/>
-                        </step>
-                        <step>
-                            <type>1</type>
-                            <params>60</params>
                         </step>
                     </preprocessing>
                     <jmx_endpoint/>
