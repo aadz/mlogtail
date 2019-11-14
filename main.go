@@ -34,7 +34,6 @@ type Config struct {
 }
 
 const (
-	version    = "0.3"
 	cmdAllowed = "stats|stats_reset|reset|tail"
 )
 
