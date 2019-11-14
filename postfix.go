@@ -10,26 +10,26 @@ import (
 )
 
 type MsgStatusCountersType struct {
-	mutex       *sync.Mutex
-	counters    map[string]uint64
-	bytesDlvMap map[string]uint64
-	bytesRcvMap map[string]bool
+	sync.Mutex
+	counters    map[string]uint64 // counters of message delivery statueses
+	bytesDlvMap map[string]uint64 // counters of messages bates
+	newRcvMap   map[string]bool   // a map listing new, just appeared messages
 }
 
 const (
 	// We expect that postfix prefix line will be in form:
-	// "Jul 22 19:06:42 hostname postfix(/(submission|smtps))?/"
-	PostfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix[^/ ]*/`
-	ReceivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=`
-	QueueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
-	QueueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
-	DeliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
-	ForwardedLine   = `forwarded as `
-	DeferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
-	BouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
-	RejectLine      = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|cleanup)\[\d+\]: .*?\breject: `
-	HoldLine        = `: NOQUEUE: hold: `
-	DiscardLine     = `: NOQUEUE: discard: `
+	// "Jul 22 19:06:42 hostname postfix(instance_name)?/"
+	postfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix[^/ ]*/`
+	receivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=`
+	queueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
+	queueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
+	deliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
+	forwardedLine   = `forwarded as `
+	deferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
+	bouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
+	rejectLine      = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|cleanup)\[\d+\]: .*?\breject: `
+	holdLine        = `: NOQUEUE: hold: `
+	discardLine     = `: NOQUEUE: discard: `
 )
 
 var (
@@ -37,23 +37,19 @@ var (
 	PostfixStatusArr = [10]string{"bytes-received", "bytes-delivered",
 		"received", "delivered", "forwarded", "deferred",
 		"bounced", "rejected", "held", "discarded"}
-	rePostfixLogLine  = regexp.MustCompile(PostfixLogLine)
-	reReceivedLine    = regexp.MustCompile(ReceivedLine)
-	reQueueActiveLine = regexp.MustCompile(QueueActiveLine)
-	reQueueRemoveLine = regexp.MustCompile(QueueRemoveLine)
-	reDeliveredLine   = regexp.MustCompile(DeliveredLine)
-	reForwardedLine   = regexp.MustCompile(ForwardedLine)
-	reDeferredLine    = regexp.MustCompile(DeferredLine)
-	reBouncedLine     = regexp.MustCompile(BouncedLine)
-	reRejectLine      = regexp.MustCompile(RejectLine)
-	reHoldLine        = regexp.MustCompile(HoldLine)
-	reDiscardLine     = regexp.MustCompile(DiscardLine)
+	rePostfixLogLine  = regexp.MustCompile(postfixLogLine)
+	reReceivedLine    = regexp.MustCompile(receivedLine)
+	reQueueActiveLine = regexp.MustCompile(queueActiveLine)
+	reQueueRemoveLine = regexp.MustCompile(queueRemoveLine)
+	reDeliveredLine   = regexp.MustCompile(deliveredLine)
+	reForwardedLine   = regexp.MustCompile(forwardedLine)
+	reDeferredLine    = regexp.MustCompile(deferredLine)
+	reBouncedLine     = regexp.MustCompile(bouncedLine)
+	reRejectLine      = regexp.MustCompile(rejectLine)
+	reHoldLine        = regexp.MustCompile(holdLine)
+	reDiscardLine     = regexp.MustCompile(discardLine)
 	msgStatusCounters MsgStatusCountersType
 )
-
-//func IsPostfixLine(s string) bool {
-//	return rePostfixLogLine.MatchString(s)
-//}
 
 func PostfixCmgHandle(ln net.Listener) {
 	for {
@@ -79,7 +75,7 @@ func PostfixLineParse(s string) {
 	if sMatch := reReceivedLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // received
 		statusKey = "received"
 		msgStatusCounters.lock()
-		msgStatusCounters.bytesRcvMap[sMatch[1]] = true
+		msgStatusCounters.newRcvMap[sMatch[1]] = true
 		msgStatusCounters.unlock()
 	} else if sMatch := reQueueActiveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // queue active
 		sz, err := strconv.Atoi(sMatch[2])
@@ -88,9 +84,9 @@ func PostfixLineParse(s string) {
 		} else {
 			msgStatusCounters.lock()
 			msgStatusCounters.bytesDlvMap[sMatch[1]] = uint64(sz)
-			if msgStatusCounters.bytesRcvMap[sMatch[1]] {
+			if msgStatusCounters.newRcvMap[sMatch[1]] {
 				msgStatusCounters.counters["bytes-received"] += uint64(sz)
-				delete(msgStatusCounters.bytesRcvMap, sMatch[1])
+				delete(msgStatusCounters.newRcvMap, sMatch[1])
 			}
 			msgStatusCounters.unlock()
 		}
@@ -128,26 +124,18 @@ func PostfixParserInit(cfg *Config) {
 	msgStatusCounters.reset()
 	if cfg.cmd == "tail" {
 		needMx = true
-		msgStatusCounters.mutex = new(sync.Mutex)
 	}
 }
 
-// PostfixStats is called in fail reaging mode (not while tailing)
+// PostfixStats is called in file reaging mode (not while tailing)
 // so we do not use locks here.
 func PostfixStats() string {
 	return msgStatusCounters.String()
 }
 
-func (c *MsgStatusCountersType) lock() {
-	// we do not perform locking here if we are just reading a disk file
-	if needMx {
-		c.mutex.Lock()
-	}
-}
-
 func (c *MsgStatusCountersType) reset() {
 	c.counters = make(map[string]uint64, 10)
-	c.bytesRcvMap = make(map[string]bool)
+	c.newRcvMap = make(map[string]bool)
 	c.bytesDlvMap = make(map[string]uint64)
 }
 
@@ -159,10 +147,17 @@ func (c *MsgStatusCountersType) String() string {
 	return res
 }
 
-func (c *MsgStatusCountersType) unlock() {
-	// we do not perform locking if we are just reading a disk file
+func (c *MsgStatusCountersType) lock() {
+	// do not perform locking here if we are just reading a file
 	if needMx {
-		c.mutex.Unlock()
+		c.Lock()
+	}
+}
+
+func (c *MsgStatusCountersType) unlock() {
+	// do not perform locking if we are just reading a file
+	if needMx {
+		c.Unlock()
 	}
 }
 

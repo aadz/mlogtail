@@ -28,12 +28,13 @@ type Config struct {
 	lnNetworkType string
 	lnAddress     string
 	maillog       string
-	maillog_type  string
-	socket_owner  string
-	socket_mode   int
+	maillogType   string
+	socketOwner   string
+	socketMode    int
 }
 
 const (
+	version    = "0.3"
 	cmdAllowed = "stats|stats_reset|reset|tail"
 )
 
@@ -106,16 +107,16 @@ func createListener(cfg *Config) net.Listener {
 
 	if cfg.lnNetworkType == "unix" {
 		// Set socket access permissions
-		mode, _ := strconv.ParseInt(fmt.Sprintf("0%d", cfg.socket_mode), 0, 64)
+		mode, _ := strconv.ParseInt(fmt.Sprintf("0%d", cfg.socketMode), 0, 64)
 		err := unix.Chmod(cfg.lnAddress, uint32(mode))
 		if err != nil {
 			fmt.Printf("Cannot chmod: %s\n", err)
 		}
 
 		// Set socket owner and group if we are root
-		if len(cfg.socket_owner) > 0 {
+		if len(cfg.socketOwner) > 0 {
 			if os.Geteuid() == 0 {
-				err = setFileOwner(cfg.lnAddress, cfg.socket_owner)
+				err = setFileOwner(cfg.lnAddress, cfg.socketOwner)
 				if err != nil {
 					fmt.Printf("Cannot set socket owner: %s", err)
 				}
@@ -158,15 +159,15 @@ func handleSIGINTKILL(ln net.Listener, cfg *Config) {
 }
 
 func readCmdLine(cfg *Config) {
-	var listen, maillog, maillog_type, socket_owner string
-	var socket_mode int
+	var listen, maillog, maillogType, socketOwner string
+	var socketMode int
 
 	flag.StringVar(&maillog, "f", "/var/log/mail.log", "Mail log file path, if the path is \"-\" then read from STDIN")
 	flag.Bool("h", false, "Show this help")
 	flag.StringVar(&listen, "l", "unix:/var/run/mlogtail.sock", "Log reader process is listening for commands on a socket file, or IPv4:PORT,\nor [IPv6]:PORT")
-	flag.StringVar(&socket_owner, "o", "", "Set a socket OWNER[:GROUP] while listening on a socket file")
-	flag.IntVar(&socket_mode, "p", 666, "Set a socket access permissions while listening on a socket file")
-	flag.StringVar(&maillog_type, "t", "postfix", "Mail log type. It is \"postfix\" only allowed for now")
+	flag.StringVar(&socketOwner, "o", "", "Set a socket OWNER[:GROUP] while listening on a socket file")
+	flag.IntVar(&socketMode, "p", 666, "Set a socket access permissions while listening on a socket file")
+	flag.StringVar(&maillogType, "t", "postfix", "Mail log type. It is \"postfix\" only allowed for now")
 	flag.Bool("v", false, "Show version information and exit")
 	flag.Parse()
 
@@ -185,15 +186,15 @@ func readCmdLine(cfg *Config) {
 
 	cfg.listen = listen
 	cfg.maillog = maillog
-	cfg.maillog_type = maillog_type
-	cfg.socket_owner = socket_owner
+	cfg.maillogType = maillogType
+	cfg.socketOwner = socketOwner
 
 	// get not options parameter (command)
 	if flag.NArg() > 0 {
 		cmds := flag.Args()
 		if strings.Contains(cmdAllowed, cmds[0]) {
 			cfg.cmd = cmds[0]
-		} else if maillog_type == "postfix" && strArrayLookup(PostfixStatusArr[:], cmds[0]) {
+		} else if maillogType == "postfix" && strArrayLookup(PostfixStatusArr[:], cmds[0]) {
 			cfg.cmd = "stats"
 			cfg.subCmd = cmds[0]
 		} else {
@@ -204,11 +205,11 @@ func readCmdLine(cfg *Config) {
 
 	// some configuratioin of tailing process
 	if cfg.cmd == "tail" {
-		if socket_mode <= 777 {
-			cfg.socket_mode = socket_mode
+		if socketMode <= 777 {
+			cfg.socketMode = socketMode
 		} else {
 			fmt.Printf("File mode cannot be greater than 777, it is set to 666\n")
-			cfg.socket_mode = 666
+			cfg.socketMode = 666
 		}
 	}
 
