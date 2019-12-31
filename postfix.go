@@ -23,8 +23,8 @@ const (
 	receivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=`
 	queueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
 	queueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
-	deliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
 	forwardedLine   = `forwarded as `
+	deliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
 	deferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
 	bouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
 	rejectLine      = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|cleanup)\[\d+\]: .*?\breject: `
@@ -41,8 +41,8 @@ var (
 	reReceivedLine    = regexp.MustCompile(receivedLine)
 	reQueueActiveLine = regexp.MustCompile(queueActiveLine)
 	reQueueRemoveLine = regexp.MustCompile(queueRemoveLine)
-	reDeliveredLine   = regexp.MustCompile(deliveredLine)
 	reForwardedLine   = regexp.MustCompile(forwardedLine)
+	reDeliveredLine   = regexp.MustCompile(deliveredLine)
 	reDeferredLine    = regexp.MustCompile(deferredLine)
 	reBouncedLine     = regexp.MustCompile(bouncedLine)
 	reRejectLine      = regexp.MustCompile(rejectLine)
