@@ -12,19 +12,21 @@ import (
 type MsgStatusCountersType struct {
 	sync.Mutex
 	counters    map[string]uint64 // counters of message delivery statueses
-	bytesDlvMap map[string]uint64 // counters of messages bates
+	bytesDlvMap map[string]uint64 // counters of messages bytes
 	newRcvMap   map[string]bool   // a map listing new, just appeared messages
 }
 
 const (
 	// We expect that postfix prefix line will be in form:
 	// "Jul 22 19:06:42 hostname postfix(instance_name)?/"
+	// where "instance_name" usually is not specified in
+	// single instance mode
 	postfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix[^/ ]*/`
-	receivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid|sender)=`
+	receivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid)=`
 	queueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
 	queueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
-	forwardedLine   = `forwarded as `
 	deliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
+	forwardedLine   = `forwarded as `
 	deferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
 	bouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
 	rejectLine      = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|cleanup)\[\d+\]: .*?\breject: `
@@ -33,16 +35,16 @@ const (
 )
 
 var (
-	needMx           bool // Need mutex
-	PostfixStatusArr = [10]string{"bytes-received", "bytes-delivered",
+	needMx             bool // Need mutex
+	PostfixStatusNames = [10]string{"bytes-received", "bytes-delivered",
 		"received", "delivered", "forwarded", "deferred",
 		"bounced", "rejected", "held", "discarded"}
 	rePostfixLogLine  = regexp.MustCompile(postfixLogLine)
 	reReceivedLine    = regexp.MustCompile(receivedLine)
 	reQueueActiveLine = regexp.MustCompile(queueActiveLine)
 	reQueueRemoveLine = regexp.MustCompile(queueRemoveLine)
-	reForwardedLine   = regexp.MustCompile(forwardedLine)
 	reDeliveredLine   = regexp.MustCompile(deliveredLine)
+	reForwardedLine   = regexp.MustCompile(forwardedLine)
 	reDeferredLine    = regexp.MustCompile(deferredLine)
 	reBouncedLine     = regexp.MustCompile(bouncedLine)
 	reRejectLine      = regexp.MustCompile(rejectLine)
@@ -141,7 +143,7 @@ func (c *MsgStatusCountersType) reset() {
 
 func (c *MsgStatusCountersType) String() string {
 	var res string
-	for _, s := range PostfixStatusArr {
+	for _, s := range PostfixStatusNames {
 		res += fmt.Sprintf("%-16s%d\n", s, c.counters[s])
 	}
 	return res

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.0</version>
-    <date>2019-05-10T19:47:43Z</date>
+    <date>2019-12-31T20:53:31Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -37,7 +37,7 @@
                     <key>postfix.queque_size</key>
                     <delay>300s</delay>
                     <history>1w</history>
-                    <trends>365d</trends>
+                    <trends>90d</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts/>
@@ -95,8 +95,8 @@
                     <snmp_oid/>
                     <key>postfix[bounced]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -157,18 +157,18 @@
                     <master_item/>
                 </item>
                 <item>
-                    <name>Bytes delivered</name>
+                    <name>Bytes delivered p/m</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
                     <key>postfix[bytes-delivered]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
-		    <units>B p/s</units>
+                    <units>Bytes</units>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
@@ -198,6 +198,10 @@
                             <type>10</type>
                             <params/>
                         </step>
+                        <step>
+                            <type>1</type>
+                            <params>60</params>
+                        </step>
                     </preprocessing>
                     <jmx_endpoint/>
                     <timeout>3s</timeout>
@@ -221,18 +225,18 @@
                     <master_item/>
                 </item>
                 <item>
-                    <name>Bytes received</name>
+                    <name>Bytes received p/m</name>
                     <type>0</type>
                     <snmp_community/>
                     <snmp_oid/>
                     <key>postfix[bytes-received]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
-		    <units>B p/s</units>
+                    <units>Bytes</units>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
@@ -261,6 +265,10 @@
                         <step>
                             <type>10</type>
                             <params/>
+                        </step>
+                        <step>
+                            <type>1</type>
+                            <params>60</params>
                         </step>
                     </preprocessing>
                     <jmx_endpoint/>
@@ -291,8 +299,8 @@
                     <snmp_oid/>
                     <key>postfix[deferred]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -359,8 +367,8 @@
                     <snmp_oid/>
                     <key>postfix[delivered]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -427,8 +435,8 @@
                     <snmp_oid/>
                     <key>postfix[discarded]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -495,8 +503,8 @@
                     <snmp_oid/>
                     <key>postfix[forwarded]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -563,8 +571,8 @@
                     <snmp_oid/>
                     <key>postfix[held]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -631,8 +639,8 @@
                     <snmp_oid/>
                     <key>postfix[received]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -699,8 +707,8 @@
                     <snmp_oid/>
                     <key>postfix[rejected]</key>
                     <delay>300s</delay>
-                    <history>1w</history>
-                    <trends>365d</trends>
+                    <history>90d</history>
+                    <trends>731d</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts/>
@@ -1031,7 +1039,7 @@
                 </graph_item>
                 <graph_item>
                     <sortorder>7</sortorder>
-                    <drawtype>0</drawtype>
+                    <drawtype>5</drawtype>
                     <color>611F27</color>
                     <yaxisside>0</yaxisside>
                     <calc_fnc>2</calc_fnc>

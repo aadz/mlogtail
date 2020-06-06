@@ -15,6 +15,8 @@ import (
 	"strings"
 	"syscall"
 
+	//"runtime/pprof"
+
 	"github.com/hpcloud/tail"
 	"golang.org/x/sys/unix"
 )
@@ -22,6 +24,7 @@ import (
 //type Config map[string]string
 type Config struct {
 	cmd           string
+	cpuprofile    string
 	subCmd        string
 	setFlags      string
 	listen        string
@@ -41,6 +44,17 @@ func main() {
 	cfg := new(Config)
 	readCmdLine(cfg)
 
+	/*
+		if cfg.cpuprofile != "" {
+			f, err := os.Create(cfg.cpuprofile)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
+		}
+	*/
 	if len(cfg.cmd) > 0 {
 		switch cfg.cmd {
 		case "tail": // start to tail of the log
@@ -140,7 +154,8 @@ func getCurrentStats(cfg *Config) {
 	} else {
 		cmd = cfg.cmd
 	}
-	buf := make([]byte, 384)
+	//buf := make([]byte, 384)
+	buf := make([]byte, 2048)
 	conn.Write([]byte(cmd))
 	cnt, _ := conn.Read(buf)
 	fmt.Printf("%s", string(buf[:cnt]))
@@ -158,9 +173,10 @@ func handleSIGINTKILL(ln net.Listener, cfg *Config) {
 }
 
 func readCmdLine(cfg *Config) {
-	var listen, maillog, maillogType, socketOwner string
+	var cpuprofile, listen, maillog, maillogType, socketOwner string
 	var socketMode int
 
+	//flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	flag.StringVar(&maillog, "f", "/var/log/mail.log", "Mail log file path, if the path is \"-\" then read from STDIN")
 	flag.Bool("h", false, "Show this help")
 	flag.StringVar(&listen, "l", "unix:/var/run/mlogtail.sock", "Log reader process is listening for commands on a socket file, or IPv4:PORT,\nor [IPv6]:PORT")
@@ -183,6 +199,7 @@ func readCmdLine(cfg *Config) {
 		os.Exit(0)
 	}
 
+	cfg.cpuprofile = cpuprofile
 	cfg.listen = listen
 	cfg.maillog = maillog
 	cfg.maillogType = maillogType
@@ -193,11 +210,11 @@ func readCmdLine(cfg *Config) {
 		cmds := flag.Args()
 		if strings.Contains(cmdAllowed, cmds[0]) {
 			cfg.cmd = cmds[0]
-		} else if maillogType == "postfix" && strArrayLookup(PostfixStatusArr[:], cmds[0]) {
+		} else if maillogType == "postfix" && strArrayLookup(PostfixStatusNames[:], cmds[0]) {
 			cfg.cmd = "stats"
 			cfg.subCmd = cmds[0]
 		} else {
-			fmt.Printf("Command can be one of \"%s\"\n", cmdAllowed+"|"+strings.Join(PostfixStatusArr[:], "|"))
+			fmt.Printf("Command can be one of \"%s\"\n", cmdAllowed+"|"+strings.Join(PostfixStatusNames[:], "|"))
 			os.Exit(1)
 		}
 	}
@@ -277,7 +294,7 @@ func tailLog(cfg *Config) {
 	go PostfixCmgHandle(ln)
 
 	tailCfg := tail.Config{
-		Location: &tail.SeekInfo{0, 2},
+		Location: &tail.SeekInfo{Offset: 0, Whence: 2},
 		ReOpen:   true,
 		Follow:   true,
 		Logger:   tail.DiscardingLogger,
