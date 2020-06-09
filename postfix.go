@@ -11,7 +11,7 @@ import (
 
 type MsgStatusCountersType struct {
 	sync.Mutex
-	counters    map[string]uint64 // counters of message delivery statues
+	counters    map[string]uint64 // counters of message delivery status
 	bytesDlvMap map[string]uint64 // counters of messages size
 	newRcvMap   map[string]bool   // a map listing new, just appeared messages
 }
