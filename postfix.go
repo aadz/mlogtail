@@ -23,7 +23,7 @@ const (
 	// single instance mode
 	postfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix[^/ ]*/`
 	receivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid)=`
-	queueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d+)[, ].+queue active`
+	queueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d{2,12})[, ].+queue active`
 	queueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
 	deliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
 	forwardedLine   = `forwarded as `
@@ -81,19 +81,14 @@ func PostfixLineParse(s string) {
 		msgStatusCounters.unlock()
 	} else if sMatch := reQueueActiveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // queue active
 		msgid := sMatch[1]
-		sz, err := strconv.Atoi(sMatch[2])
-		if err != nil {
-			fmt.Printf("Cannot convert message size to a number, msgid %s: %s\n",
-				msgid, err)
-		} else {
-			msgStatusCounters.lock()
-			msgStatusCounters.bytesDlvMap[msgid] = uint64(sz)
-			if msgStatusCounters.newRcvMap[msgid] {
-				msgStatusCounters.counters["bytes-received"] += uint64(sz)
-				delete(msgStatusCounters.newRcvMap, msgid)
-			}
-			msgStatusCounters.unlock()
+		sz, _ := strconv.ParseUint(sMatch[2], 10, 64) // don't check error after regexp selection
+		msgStatusCounters.lock()
+		msgStatusCounters.bytesDlvMap[msgid] = uint64(sz)
+		if msgStatusCounters.newRcvMap[msgid] {
+			msgStatusCounters.counters["bytes-received"] += sz
+			delete(msgStatusCounters.newRcvMap, msgid)
 		}
+		msgStatusCounters.unlock()
 	} else if sMatch := reQueueRemoveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // removed
 		msgStatusCounters.lock()
 		delete(msgStatusCounters.bytesDlvMap, sMatch[1])
