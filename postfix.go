@@ -80,15 +80,17 @@ func PostfixLineParse(s string) {
 		msgStatusCounters.newRcvMap[sMatch[1]] = true
 		msgStatusCounters.unlock()
 	} else if sMatch := reQueueActiveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // queue active
+		msgid := sMatch[1]
 		sz, err := strconv.Atoi(sMatch[2])
 		if err != nil {
-			fmt.Printf("Cannot convert to a number: %s\n", err)
+			fmt.Printf("Cannot convert message size to a number, msgid %s: %s\n",
+				msgid, err)
 		} else {
 			msgStatusCounters.lock()
-			msgStatusCounters.bytesDlvMap[sMatch[1]] = uint64(sz)
-			if msgStatusCounters.newRcvMap[sMatch[1]] {
+			msgStatusCounters.bytesDlvMap[msgid] = uint64(sz)
+			if msgStatusCounters.newRcvMap[msgid] {
 				msgStatusCounters.counters["bytes-received"] += uint64(sz)
-				delete(msgStatusCounters.newRcvMap, sMatch[1])
+				delete(msgStatusCounters.newRcvMap, msgid)
 			}
 			msgStatusCounters.unlock()
 		}
