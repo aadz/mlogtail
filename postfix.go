@@ -27,8 +27,8 @@ const (
 	queueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
 	deliveredLine   = `\[\d+\]: ([\dA-F]+): .+ status=sent`
 	forwardedLine   = `forwarded as `
-	deferredLine    = `\[\d+\]: ([\dA-F]+): .+ status=deferred`
-	bouncedLine     = `\[\d+\]: ([\dA-F]+): .+ status=bounced`
+	deferredLine    = `\[\d+\]: (?:[\dA-F]+): .+ status=deferred`
+	bouncedLine     = `\[\d+\]: (?:[\dA-F]+): .+ status=bounced`
 	rejectLine      = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|cleanup)\[\d+\]: .*?\breject: `
 	holdLine        = `: NOQUEUE: hold: `
 	discardLine     = `: NOQUEUE: discard: `
@@ -81,10 +81,11 @@ func PostfixLineParse(s string) {
 		msgStatusCounters.unlock()
 	} else if sMatch := reQueueActiveLine.FindStringSubmatch(s[logPrefixLen:]); sMatch != nil { // queue active
 		msgid := sMatch[1]
-		sz, _ := strconv.ParseUint(sMatch[2], 10, 64) // don't check error after regexp selection
+		sz, _ := strconv.ParseUint(sMatch[2], 10, 64) // no error check after regexp selection
+
 		msgStatusCounters.lock()
 		msgStatusCounters.bytesDlvMap[msgid] = uint64(sz)
-		if msgStatusCounters.newRcvMap[msgid] {
+		if msgStatusCounters.newRcvMap[msgid] { // update `bytes-received` counter only once
 			msgStatusCounters.counters["bytes-received"] += sz
 			delete(msgStatusCounters.newRcvMap, msgid)
 		}
