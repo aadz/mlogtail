@@ -92,3 +92,4 @@ go get -u github.com/hpcloud/tail go get golang.org/x/sys/unix &&
   chown root:bin /usr/local/sbin/mlogtail &&
   chmod 0711 /usr/local/sbin/mlogtail
 ```
+
