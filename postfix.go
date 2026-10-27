@@ -21,7 +21,10 @@ const (
 	// "Jul 22 19:06:42 hostname postfix(instance_name)?/"
 	// where "instance_name" usually is not specified in
 	// single instance mode
-	postfixLogLine  = `^[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d \S+ postfix[^/ ]*/`
+	// There are two date format possible in a log line:
+	//   RFC 3339 format (2026-10-27T05:42:13.337962+03:00)
+	//   traditional BSD format (Jul 22 19:06:42)
+	postfixLogLine  = `^(\d\d\d\d-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\S+|[JAMDFONS][aeucop][nrbcglptvy] [1-3 ]\d [0-2]\d:[0-5]\d:[0-5]\d) \S+ postfix[^/ ]*/`
 	receivedLine    = `^(?:(?:s(?:mtps/|ubmission)/)?smtp[ds]|pickup)\[\d+\]: ([\dA-F]+): (?:client|uid)=`
 	queueActiveLine = `^qmgr\[\d+\]: ([\dA-F]+): .* size=(\d{2,12})[, ].+queue active`
 	queueRemoveLine = `^(?:qmgr|postsuper)\[\d+\]: ([\dA-F]+): removed`
