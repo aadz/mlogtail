@@ -293,23 +293,45 @@ func tailLog(cfg *Config) {
 	go handleSIGINTKILL(ln, cfg)
 	go PostfixCmgHandle(ln)
 
-	tailCfg := tail.Config{
-		Location: &tail.SeekInfo{Offset: 0, Whence: 2},
-		ReOpen:   true,
-		Follow:   true,
-		Logger:   tail.DiscardingLogger,
-	}
-	t, err := tail.TailFile(cfg.maillog, tailCfg)
-	if err != nil {
-		fmt.Printf("Cannot tail mail log file: %v\n", err)
+	if cfg.maillog == "-" {
+		var err error
+		var line string
+
+		PostfixParserInit(cfg)
+		buf := bufio.NewReaderSize(os.Stdin, 64*1024)
+		for {
+			line, err = buf.ReadString('\n')
+			if err != nil {
+				break
+			} else {
+				PostfixLineParse(line)
+			}
+		}
 		closeListener(ln, cfg)
-		os.Exit(1)
-	}
+		if err != io.EOF {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	} else {
+		tailCfg := tail.Config{
+			Location: &tail.SeekInfo{Offset: 0, Whence: 2},
+			ReOpen:   true,
+			Follow:   true,
+			Logger:   tail.DiscardingLogger,
+		}
+		t, err := tail.TailFile(cfg.maillog, tailCfg)
+		if err != nil {
+			fmt.Printf("Cannot tail mail log file: %v\n", err)
+			closeListener(ln, cfg)
+			os.Exit(1)
+		}
 
-	PostfixParserInit(cfg)
+		PostfixParserInit(cfg)
 
-	for line := range t.Lines {
-		PostfixLineParse(line.Text)
+		for line := range t.Lines {
+			PostfixLineParse(line.Text)
+		}
 	}
 }
 
