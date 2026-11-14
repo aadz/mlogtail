@@ -2,5 +2,5 @@ package main
 
 const (
 	PROGNAME = "mlogtail"
-	VERSION  = "1.1.16"
+	VERSION  = "1.1.17"
 )
